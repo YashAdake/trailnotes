@@ -131,6 +131,15 @@ def test_model_output_cannot_inject_html_or_close_the_data_script(walk_dir, tmp_
     assert html.count("</script>") == 3
 
 
+def test_photos_years_apart_are_not_called_a_walk(tmp_path):
+    d = tmp_path / "s"
+    d.mkdir()
+    make_photo(d / "a.jpg", taken="2013:02:05 22:58:28", gps=(18.5, 73.8))
+    make_photo(d / "b.jpg", taken="2026:09:24 10:00:00", gps=(18.6, 73.9))
+    html = render_html(build_journal(d, tmp_path / "o", Fake()), "T")
+    assert "not one walk" in html and "first to last photo" not in html
+
+
 # ---- CLI, end to end through the real interface ---------------------------
 
 def test_cli_mock_end_to_end(walk_dir, tmp_path, capsys):

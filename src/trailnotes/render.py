@@ -98,9 +98,13 @@ def render_html(j: Journal, title: str) -> str:
             if s.geotagged >= 2
             else ""
         )
-        stats = (
-            f"<ul class='stats'><li><b>{s.photos}</b>photos</li>"
+        span = (
             f"<li><b>{s.duration_minutes} min</b>first to last photo</li>"
+            if s.duration_minutes < 24 * 60
+            else f"<li><b>{s.duration_minutes // (24 * 60)} days</b>between first and last photo (not one walk)</li>"
+        )
+        stats = (
+            f"<ul class='stats'><li><b>{s.photos}</b>photos</li>{span}"
             f"<li><b>{s.geotagged}</b>with GPS</li>{dist}</ul>"
         )
     # "<" is escaped so no photo-derived string can close the script tag.

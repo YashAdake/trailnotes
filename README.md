@@ -25,6 +25,8 @@ Then open `journal\index.html`. The folder also contains `journal.md` and `journ
 
 Try the pipeline with no model at all: `trailnotes C:\path\to\photos --mock`. The mock journal is labelled as mock.
 
+No photos of your own yet? `python scripts/fetch_sample.py` downloads a few free-licensed, geotagged photos from Wikimedia Commons into `samples/` (git-ignored) with a `CREDITS.md` of authors and licences. These are for testing and demos only: they are not one walk, the GPS is written in from Commons coordinates rather than a camera, and the journal says "not one walk" when the photos span more than a day. Do not present a sample journal as a walk you took.
+
 Options: `--model` (any Ollama vision model), `--host` (Ollama URL), `--title`, `-o`.
 
 ## What it does, and what it does not claim
@@ -41,7 +43,7 @@ Options: `--model` (any Ollama vision model), `--host` (Ollama URL), `--title`, 
 python -m pytest
 ```
 
-19 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
+20 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
 
 ## Layout
 
