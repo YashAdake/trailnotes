@@ -9,7 +9,7 @@ ollama pull qwen2.5vl:7b
 git clone <repo-url> ; cd trailnotes
 python -m venv .venv ; .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
-python -m pytest            # expect: 26 passed
+python -m pytest            # expect: 30 passed
 ```
 
 ## 1. Real walk (needed for the challenge's outdoor bonus)
@@ -17,7 +17,7 @@ python -m pytest            # expect: 26 passed
 1. Go for a walk. Take 10 to 20 photos on your phone with location turned on for the camera app.
 2. Copy them to the OMEN. If your transfer app strips location, the journal will have no map. Check that a photo shows GPS under Properties > Details.
 3. `trailnotes C:\path\to\photos -o journal --title "Pune walk"`
-4. Open `journal\index.html`.
+5. Open `journal\index.html`.
 
 ## 2. What to check and report
 

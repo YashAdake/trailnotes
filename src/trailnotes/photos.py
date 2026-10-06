@@ -10,6 +10,8 @@ from pathlib import Path
 from PIL import Image, ImageOps
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
+# Photo formats phones produce that we do not read. They are reported, never silently dropped.
+UNSUPPORTED_SUFFIXES = {".heic", ".heif", ".dng", ".tif", ".tiff", ".bmp", ".gif"}
 
 _EXIF_IFD = 0x8769
 _GPS_IFD = 0x8825
@@ -28,6 +30,12 @@ class PhotoMeta:
 def find_photos(folder: Path) -> list[Path]:
     return sorted(
         p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_SUFFIXES
+    )
+
+
+def find_unsupported(folder: Path) -> list[Path]:
+    return sorted(
+        p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in UNSUPPORTED_SUFFIXES
     )
 
 

@@ -23,6 +23,8 @@ trailnotes C:\path\to\walk-photos -o journal --title "Sunday walk"
 
 Then open `journal\index.html`. The folder also contains `journal.md` and `journal.json`.
 
+Check your photos first, with no model: `trailnotes C:\path	o\photos --check` lists each photo's camera time and GPS, so you can see which ones will get a map pin before spending minutes on the model. Formats: JPEG, PNG and WebP. iPhone HEIC files are not read: the tool warns and ignores them, so switch the camera to "Most Compatible" or export as JPEG. Photos sent through WhatsApp usually lose their GPS and time, so copy the originals over USB, Drive or Nearby Share instead.
+
 Try the pipeline with no model at all: `trailnotes C:\path\to\photos --mock`. The mock journal is labelled as mock.
 
 No photos of your own yet? `python scripts/fetch_sample.py` downloads a few free-licensed, geotagged photos from Wikimedia Commons into `samples/` (git-ignored) with a `CREDITS.md` of authors and licences. These are for testing and demos only: they are not one walk, the GPS is written in from Commons coordinates rather than a camera, and the journal says "not one walk" when the photos span more than a day. Do not present a sample journal as a walk you took.
@@ -62,7 +64,7 @@ The gemma column used an earlier prompt, so this is a rough comparison, not a be
 python -m pytest
 ```
 
-26 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
+30 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
 
 ## Layout
 

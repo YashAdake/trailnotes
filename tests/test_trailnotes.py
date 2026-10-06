@@ -237,6 +237,37 @@ def test_cli_mock_end_to_end(walk_dir, tmp_path, capsys):
     assert (out / "journal.md").exists()
 
 
+def test_check_mode_lists_gps_and_time_without_any_model(walk_dir, capsys):
+    make_photo(walk_dir / "nogps.jpg", taken="2026:10:11 09:00:00", gps=None)
+    make_photo(walk_dir / "notime.jpg", taken=None, gps=None)
+    assert main([str(walk_dir), "--check"]) == 0
+    out = capsys.readouterr().out
+    assert "5 photos: 2 with GPS, 4 with a camera timestamp" in out
+    notime = next(line for line in out.splitlines() if line.startswith("notime.jpg"))
+    assert "no camera time" in notime and "no GPS" in notime
+
+
+def test_heic_files_are_reported_not_silently_dropped(walk_dir, capsys):
+    (walk_dir / "IMG_0001.HEIC").write_bytes(b"x")
+    assert main([str(walk_dir), "--check"]) == 0
+    err = capsys.readouterr().err
+    assert "IMG_0001.HEIC" in err and "JPEG" in err
+
+
+def test_folder_of_only_heic_is_an_error_that_says_why(tmp_path, capsys):
+    (tmp_path / "a.heic").write_bytes(b"x")
+    assert main([str(tmp_path), "-o", str(tmp_path / "o"), "--mock"]) == 2
+    assert "a.heic" in capsys.readouterr().err
+
+
+def test_mixed_gps_journal_renders_pins_only_for_geotagged(walk_dir, tmp_path):
+    out = tmp_path / "j"
+    assert main([str(walk_dir), "-o", str(out), "--mock"]) == 0
+    html = (out / "index.html").read_text(encoding="utf-8")
+    assert html.count("no GPS in this photo") == 1  # c.jpg only
+    assert html.count('"lat": 18.5') == 2
+
+
 def test_cli_exit_codes(tmp_path):
     assert main([str(tmp_path / "nope"), "--mock"]) == 2
     assert main([str(tmp_path), "-o", str(tmp_path / "o"), "--mock"]) == 2  # no photos
