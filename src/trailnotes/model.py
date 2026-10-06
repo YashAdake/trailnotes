@@ -15,10 +15,11 @@ Describe only what is visible in the frame. Do not guess where it was taken.
 - title: 2 to 6 words.
 - description: 1 to 3 sentences about what is in the frame.
 - terrain: 2 to 4 words (for example "paved path" or "wetland edge"), never a sentence.
-- living_things: only plants, fungi or animals that are actually visible in the frame.
-  Not food, not people, not signs, not things you would expect to see. If none are
-  visible, return an empty list. Use "high" only when distinctive features are clearly
-  visible; if you are unsure, use "low". Do not put confidence notes in the description.
+- living_things: every plant, tree, fungus or animal you can clearly see, including
+  ones in the background. Not food, not people, not signs, not things you would merely
+  expect to see. If none are visible, return an empty list. Use "high" only when
+  distinctive features are clearly visible; if you are unsure, use "low".
+  Do not put confidence notes or "no living things" remarks in the description.
 Reply with JSON only."""
 
 SCHEMA = {

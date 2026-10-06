@@ -13,7 +13,7 @@ Your walk photos carry your exact GPS position, your routine and often your home
 Requirements: Python 3.10+, [Ollama](https://ollama.com), a GPU with about 6 GB free VRAM (CPU works, but slowly).
 
 ```powershell
-ollama pull gemma3:4b
+ollama pull qwen2.5vl:7b
 git clone <this repo> ; cd trailnotes
 python -m venv .venv ; .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
@@ -37,14 +37,22 @@ Options: `--model` (any Ollama vision model), `--host` (Ollama URL), `--title`, 
 - **Failures are visible.** If the model returns junk for a photo, that entry appears as failed with the reason, and the footer counts them. A photo that cannot be opened at all is listed as unreadable. If every photo fails, the command exits non-zero. A folder with no photos is an error, not an empty journal.
 - **Model output is treated as untrusted.** Everything is HTML-escaped and the map data cannot break out of its script tag. The tests prove this by deliberately injecting markup.
 
-## Known limits (seen in a real run)
+## Known limits (seen in real runs)
 
-Tested on 12 geotagged Wikimedia Commons photos with `gemma3:4b` on an RTX 5060 laptop: about 4.8 s per photo, 12 of 12 described. Quality was mixed, and the journal is honest about that:
+Both models were run on 12 geotagged Wikimedia Commons photos, on an RTX 5060 laptop GPU through Ollama.
 
-- It named the wrong birds (an Indian cormorant and painted stork came back as "Corvids" and "Grey Heron").
-- It reported a "Squirrel" at *high* confidence on a gate covered in signs. The model's confidence is its own opinion, not a measurement, so do not treat "high" as verified.
-- It sometimes listed food as living things, used the terrain field for a whole sentence, or leaked "(confidence: medium)" into the text. The prompt and parser were tightened after this run; re-check with your own photos.
-- Read-aloud text in non-English signs may be wrong. Check it before quoting it.
+| | `gemma3:4b` | `qwen2.5vl:7b` (default) |
+|---|---|---|
+| Speed | about 4.8 s per photo | about 6.4 s per photo |
+| Described | 12 of 12 | 12 of 12 |
+| Wrong guesses | Called an Indian cormorant and painted stork "Corvids" and "Grey Heron"; reported a "Squirrel" at *high* confidence on a gate covered in signs | None seen in 12 photos |
+| Misses | Listed food as living things; put sentences in the terrain field | Left out plants that were clearly there (a dandelion, background trees), though the prompt has since been loosened and not yet re-checked |
+
+The gemma column used an earlier prompt than the qwen column, so this is a rough comparison, not a benchmark. With 12 photos, "none seen" means exactly that and no more.
+
+- The model's confidence is its own opinion, not a measurement. Do not treat "high" as verified.
+- Text on signs in other scripts may be misread. Check it before quoting it.
+- Sample-photo pins can sit on one city-center coordinate, because Commons only has that for some photos.
 
 ## Tests
 

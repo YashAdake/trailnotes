@@ -5,11 +5,11 @@ Code is written and unit-tested on the build PC (no GPU). Everything that needs 
 ## 0. One-time setup
 
 ```powershell
-ollama pull gemma3:4b
+ollama pull qwen2.5vl:7b
 git clone <repo-url> ; cd trailnotes
 python -m venv .venv ; .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
-python -m pytest            # expect: 19 passed
+python -m pytest            # expect: 23 passed
 ```
 
 ## 1. Real walk (needed for the challenge's outdoor bonus)
@@ -28,7 +28,7 @@ python -m pytest            # expect: 19 passed
 - Any entry marked failed, and the reason shown.
 - A screenshot of the page, and a 30 to 60 second screen recording of it for the DEV post's Demo section.
 
-## 3. If gemma3:4b is too slow or too weak
+## 3. If qwen2.5vl:7b is too slow or too weak
 
 `ollama list` to see what you have, then try another vision model with `--model`. Tell me which and what happened.
 

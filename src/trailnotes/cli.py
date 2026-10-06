@@ -14,7 +14,7 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("photos", type=Path, help="folder of walk photos (searched recursively)")
     p.add_argument("-o", "--out", type=Path, default=Path("journal"), help="output folder")
     p.add_argument("--title", default="Field notes", help="journal title")
-    p.add_argument("--model", default="gemma3:4b", help="Ollama vision model")
+    p.add_argument("--model", default="qwen2.5vl:7b", help="Ollama vision model")
     p.add_argument("--host", default="http://localhost:11434", help="Ollama URL")
     p.add_argument("--mock", action="store_true", help="no model: test the pipeline without a GPU")
     return p
