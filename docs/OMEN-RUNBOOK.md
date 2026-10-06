@@ -16,7 +16,8 @@ python -m pytest            # expect: 30 passed
 
 1. Go for a walk. Take 10 to 20 photos on your phone with location turned on for the camera app.
 2. Copy them to the OMEN. If your transfer app strips location, the journal will have no map. Check that a photo shows GPS under Properties > Details.
-3. `trailnotes C:\path\to\photos -o journal --title "Pune walk"`
+3. Look before you run the model: `trailnotes C:\path\to\photos --check` shows which photos have GPS and a camera time.
+4. `trailnotes C:\path\to\photos -o journal --title "Pune walk"`
 5. Open `journal\index.html`.
 
 ## 2. What to check and report

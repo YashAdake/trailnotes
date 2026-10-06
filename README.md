@@ -23,7 +23,7 @@ trailnotes C:\path\to\walk-photos -o journal --title "Sunday walk"
 
 Then open `journal\index.html`. The folder also contains `journal.md` and `journal.json`.
 
-Check your photos first, with no model: `trailnotes C:\path	o\photos --check` lists each photo's camera time and GPS, so you can see which ones will get a map pin before spending minutes on the model. Formats: JPEG, PNG and WebP. iPhone HEIC files are not read: the tool warns and ignores them, so switch the camera to "Most Compatible" or export as JPEG. Photos sent through WhatsApp usually lose their GPS and time, so copy the originals over USB, Drive or Nearby Share instead.
+Check your photos first, with no model: `trailnotes C:\path\to\photos --check` lists each photo's camera time and GPS, so you can see which ones will get a map pin before spending minutes on the model. Formats: JPEG, PNG and WebP. iPhone HEIC files are not read: the tool warns and ignores them, so switch the camera to "Most Compatible" or export as JPEG. Photos sent through WhatsApp usually lose their GPS and time, so copy the originals over USB, Drive or Nearby Share instead.
 
 Try the pipeline with no model at all: `trailnotes C:\path\to\photos --mock`. The mock journal is labelled as mock.
 
