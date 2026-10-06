@@ -14,11 +14,13 @@ PROMPT = """You are helping write a field journal entry for one photo taken on a
 Describe only what is visible in the frame. Do not guess where it was taken.
 - title: 2 to 6 words.
 - description: 1 to 3 sentences about what is in the frame.
-- terrain: 2 to 4 words (for example "paved path" or "wetland edge"), never a sentence.
-- living_things: every plant, tree, fungus or animal you can clearly see, including
-  ones in the background. Not food, not people, not signs, not things you would merely
-  expect to see. If none are visible, return an empty list. Use "high" only when
-  distinctive features are clearly visible; if you are unsure, use "low".
+- terrain: 2 to 4 words describing the ground or setting you can actually see (for
+  example "wetland edge", "red carpet", "indoor"), never a sentence. Do not default to "paved path".
+- living_things: look at the whole frame first and list every plant, tree, flower, fungus
+  or animal you can clearly see, including ones in the background. Non-living things are
+  never listed: no water, mist, sky, light, rocks, buildings, food, people or signs. If
+  none are visible, return an empty list. Use "high" only when distinctive features are
+  clearly visible; if you are unsure, use "low". List each thing once.
   Do not put confidence notes or "no living things" remarks in the description.
 Reply with JSON only."""
 
@@ -26,8 +28,8 @@ SCHEMA = {
     "type": "object",
     "properties": {
         "title": {"type": "string"},
-        "description": {"type": "string"},
-        "terrain": {"type": "string"},
+        # Listed before the prose on purpose: a small model that writes the description
+        # first tends to leave this list empty even when its own text mentions plants.
         "living_things": {
             "type": "array",
             "items": {
@@ -39,8 +41,10 @@ SCHEMA = {
                 "required": ["name", "confidence"],
             },
         },
+        "terrain": {"type": "string"},
+        "description": {"type": "string"},
     },
-    "required": ["title", "description", "terrain", "living_things"],
+    "required": ["title", "living_things", "terrain", "description"],
 }
 
 _CONFIDENCE = {"low", "medium", "high"}
