@@ -11,9 +11,14 @@ from typing import Protocol
 import requests
 
 PROMPT = """You are helping write a field journal entry for one photo taken on a walk.
-Describe only what is visible. Do not guess where it was taken.
-Name living things (plants, birds, insects, animals) only if you can see them, and
-give an honest confidence: "low", "medium" or "high". If you are unsure, say "low".
+Describe only what is visible in the frame. Do not guess where it was taken.
+- title: 2 to 6 words.
+- description: 1 to 3 sentences about what is in the frame.
+- terrain: 2 to 4 words (for example "paved path" or "wetland edge"), never a sentence.
+- living_things: only plants, fungi or animals that are actually visible in the frame.
+  Not food, not people, not signs, not things you would expect to see. If none are
+  visible, return an empty list. Use "high" only when distinctive features are clearly
+  visible; if you are unsure, use "low". Do not put confidence notes in the description.
 Reply with JSON only."""
 
 SCHEMA = {
@@ -61,7 +66,11 @@ class Backend(Protocol):
 
 
 def _clip(value, limit: int) -> str:
-    return str(value).strip()[:limit] if value is not None else ""
+    text = str(value).strip() if value is not None else ""
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+_LEAKED_CONFIDENCE = re.compile(r"\s*\((?:confidence|certainty)[^)]*\)", re.I)
 
 
 def parse_observation(text: str) -> Observation:
@@ -75,7 +84,7 @@ def parse_observation(text: str) -> Observation:
     if not isinstance(data, dict):
         raise ValueError("model output is not a JSON object")
     title = _clip(data.get("title"), 120)
-    description = _clip(data.get("description"), 1200)
+    description = _LEAKED_CONFIDENCE.sub("", _clip(data.get("description"), 1200))
     if not title and not description:
         raise ValueError("model output has neither title nor description")
     things = []

@@ -131,6 +131,38 @@ def test_model_output_cannot_inject_html_or_close_the_data_script(walk_dir, tmp_
     assert html.count("</script>") == 3
 
 
+def test_file_time_photos_do_not_stretch_the_walk_span(tmp_path):
+    d = tmp_path / "s"
+    d.mkdir()
+    make_photo(d / "a.jpg", taken="2026:10:11 07:00:00", gps=(18.5, 73.8))
+    make_photo(d / "b.jpg", taken="2026:10:11 07:30:00", gps=(18.5, 73.8))
+    make_photo(d / "c.jpg", taken=None, gps=None)  # file time = now, years later
+    s = walk_stats([read_meta(p) for p in find_photos(d)])
+    assert s.duration_minutes == 30
+    assert (s.photos, s.timed) == (3, 2)
+    html = render_html(build_journal(d, tmp_path / "o", Fake()), "T")
+    assert "30 min" in html and "without a camera timestamp" in html
+
+
+def test_no_span_claimed_with_fewer_than_two_timestamps(tmp_path):
+    d = tmp_path / "s"
+    d.mkdir()
+    make_photo(d / "a.jpg", taken="2026:10:11 07:00:00", gps=None)
+    make_photo(d / "b.jpg", taken=None, gps=None)
+    s = walk_stats([read_meta(p) for p in find_photos(d)])
+    assert s.duration_minutes is None
+    assert "min</b>" not in render_html(build_journal(d, tmp_path / "o", Fake()), "T")
+
+
+def test_leaked_confidence_note_is_removed_and_truncation_is_marked():
+    o = parse_observation(
+        '{"title":"t","description":"Pigeons on a tree (confidence: medium).","terrain":"%s","living_things":[]}'
+        % ("x" * 300)
+    )
+    assert "confidence" not in o.description and o.description == "Pigeons on a tree."
+    assert o.terrain.endswith("…") and len(o.terrain) == 120
+
+
 def test_photos_years_apart_are_not_called_a_walk(tmp_path):
     d = tmp_path / "s"
     d.mkdir()

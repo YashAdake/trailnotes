@@ -23,14 +23,20 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 class WalkStats:
     photos: int
     geotagged: int
-    started: datetime
-    ended: datetime
+    # Only photos with a real camera timestamp count toward the time span. A file's
+    # modified time is when it was copied, not when it was taken, so it must not
+    # stretch (or shrink) the span.
+    timed: int
+    started: datetime | None
+    ended: datetime | None
     # Straight lines between consecutive geotagged photos. A lower bound on the
     # real distance walked, and the report says so.
     min_distance_km: float
 
     @property
-    def duration_minutes(self) -> int:
+    def duration_minutes(self) -> int | None:
+        if self.started is None or self.ended is None:
+            return None
         return int((self.ended - self.started).total_seconds() // 60)
 
 
@@ -39,13 +45,13 @@ def walk_stats(metas: list[PhotoMeta]) -> WalkStats | None:
         return None
     ordered = sorted(metas, key=lambda m: m.taken)
     pts = [(m.lat, m.lon) for m in ordered if m.lat is not None and m.lon is not None]
-    dist = sum(
-        haversine_km(a[0], a[1], b[0], b[1]) for a, b in zip(pts, pts[1:])
-    )
+    dist = sum(haversine_km(a[0], a[1], b[0], b[1]) for a, b in zip(pts, pts[1:]))
+    times = [m.taken for m in ordered if m.time_source == "exif"]
     return WalkStats(
         photos=len(ordered),
         geotagged=len(pts),
-        started=ordered[0].taken,
-        ended=ordered[-1].taken,
+        timed=len(times),
+        started=times[0] if len(times) >= 2 else None,
+        ended=times[-1] if len(times) >= 2 else None,
         min_distance_km=dist,
     )

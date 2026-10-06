@@ -24,7 +24,8 @@ h1{font-size:2.2rem;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 24px}
 .meta{color:var(--muted);font:13px/1.4 ui-monospace,Consolas,monospace;margin:0 0 10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;padding:0;list-style:none}
 .chips li{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:14px}
-.chips .low{border-style:dashed;color:var(--muted)}
+.chips .medium{border-style:dotted;color:var(--muted)}
+.chips .low{border-style:dashed;color:var(--muted);opacity:.75}
 .failed{color:var(--warn)}
 footer{color:var(--muted);font-size:14px;margin-top:32px}
 """
@@ -98,11 +99,18 @@ def render_html(j: Journal, title: str) -> str:
             if s.geotagged >= 2
             else ""
         )
-        span = (
-            f"<li><b>{s.duration_minutes} min</b>first to last photo</li>"
-            if s.duration_minutes < 24 * 60
-            else f"<li><b>{s.duration_minutes // (24 * 60)} days</b>between first and last photo (not one walk)</li>"
-        )
+        mins = s.duration_minutes
+        if mins is None:
+            span = ""
+        elif mins < 24 * 60:
+            span = f"<li><b>{mins} min</b>first to last photo</li>"
+        else:
+            span = (
+                f"<li><b>{mins // (24 * 60)} days</b>between first and last "
+                f"timestamped photo (not one walk)</li>"
+            )
+        if s.timed < s.photos:
+            span += f"<li><b>{s.photos - s.timed}</b>without a camera timestamp</li>"
         stats = (
             f"<ul class='stats'><li><b>{s.photos}</b>photos</li>{span}"
             f"<li><b>{s.geotagged}</b>with GPS</li>{dist}</ul>"
@@ -121,9 +129,9 @@ def render_html(j: Journal, title: str) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)}</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>{_CSS}</style></head>
 <body><main><h1>{escape(title)}</h1>
-<p class="sub">A field journal written by a model running on this computer ({escape(j.backend)}). Identifications are guesses; dashed chips mean the model said it was unsure.</p>
+<p class="sub">A field journal written by a model running on this computer ({escape(j.backend)}). Identifications are guesses by a small model, and its confidence is its own opinion, not a measurement: treat even "high" as unverified. Dashed and dotted chips are the ones it was less sure about.</p>
 {stats}<div id="map"></div>{entries}
-<footer>Photos and descriptions never left this machine.{escape(note)}{escape(skipped)}</footer></main>
+<footer>Photos and descriptions never left this machine. Opening this page loads the map library and map tiles from the internet, which reveals the area you are viewing to those servers.{escape(note)}{escape(skipped)}</footer></main>
 <script id="points" type="application/json">{points}</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>{_MAP_JS}</script></body></html>"""
 
