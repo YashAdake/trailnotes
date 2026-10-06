@@ -13,3 +13,6 @@ photos/
 *.png
 *.webp
 !docs/**/*.png
+
+# Sample photos fetched by scripts/fetch_sample.py (licensed per CREDITS.md, not ours to redistribute here)
+samples/
