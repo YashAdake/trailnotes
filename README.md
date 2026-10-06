@@ -39,18 +39,20 @@ Options: `--model` (any Ollama vision model), `--host` (Ollama URL), `--title`, 
 
 ## Known limits (seen in real runs)
 
-Both models were run on 12 geotagged Wikimedia Commons photos, on an RTX 5060 laptop GPU through Ollama.
+Run on 12 geotagged Wikimedia Commons photos, on an RTX 5060 laptop GPU through Ollama. Several rounds of prompt changes are summarised here, not hidden.
 
-| | `gemma3:4b` | `qwen2.5vl:7b` (default) |
+| | `gemma3:4b`, first prompt | `qwen2.5vl:7b` (default), final prompt |
 |---|---|---|
-| Speed | about 4.8 s per photo | about 6.4 s per photo |
-| Described | 12 of 12 | 12 of 12 |
-| Wrong guesses | Called an Indian cormorant and painted stork "Corvids" and "Grey Heron"; reported a "Squirrel" at *high* confidence on a gate covered in signs | None seen in 12 photos |
-| Misses | Listed food as living things; put sentences in the terrain field | Left out plants that were clearly there (a dandelion, background trees), though the prompt has since been loosened and not yet re-checked |
+| Speed | about 4.8 s per photo | about 5.6 s per photo (67 s for 12) |
+| Described | 12 of 12 | 12 of 12 on the latest run |
+| Wrong guesses | Called an Indian cormorant and painted stork "Corvids" and "Grey Heron"; reported a "Squirrel" at *high* confidence on a gate covered in signs | None confirmed. A few high-confidence tree and species claims are unchecked against the photos |
+| Misses | Listed food as living things; put sentences in the terrain field | Recall of plants is better but inconsistent (a tree mentioned in one run was absent in the next) |
 
-The gemma column used an earlier prompt than the qwen column, so this is a rough comparison, not a benchmark. With 12 photos, "none seen" means exactly that and no more.
+How it got there: one earlier qwen run listed "water" and "mist" as living things and missed a dandelion. Reordering the schema fixed the misses but caused one runaway response (about 9,400 characters of repeated items, unparseable) for one photo. The schema now bounds list and string length, the response is capped, and unusable output is retried once. That failure has not been seen since, but only one clean run has been checked, so treat it as fixed on that evidence only.
 
-- The model's confidence is its own opinion, not a measurement. Do not treat "high" as verified.
+The gemma column used an earlier prompt, so this is a rough comparison, not a benchmark. With 12 photos and a handful of runs, "none confirmed" means exactly that and no more. Output is not identical between runs.
+
+- The model's confidence is its own opinion, not a measurement. Do not treat "high" as verified, especially species-level names.
 - Text on signs in other scripts may be misread. Check it before quoting it.
 - Sample-photo pins can sit on one city-center coordinate, because Commons only has that for some photos.
 
