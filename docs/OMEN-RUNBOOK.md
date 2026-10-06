@@ -9,7 +9,7 @@ ollama pull qwen2.5vl:7b
 git clone <repo-url> ; cd trailnotes
 python -m venv .venv ; .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
-python -m pytest            # expect: 23 passed
+python -m pytest            # expect: 26 passed
 ```
 
 ## 1. Real walk (needed for the challenge's outdoor bonus)

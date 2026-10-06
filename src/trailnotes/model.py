@@ -27,22 +27,23 @@ Reply with JSON only."""
 SCHEMA = {
     "type": "object",
     "properties": {
-        "title": {"type": "string"},
+        "title": {"type": "string", "maxLength": 80},
         # Listed before the prose on purpose: a small model that writes the description
         # first tends to leave this list empty even when its own text mentions plants.
         "living_things": {
             "type": "array",
+            "maxItems": 8,
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string"},
+                    "name": {"type": "string", "maxLength": 40},
                     "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
                 },
                 "required": ["name", "confidence"],
             },
         },
-        "terrain": {"type": "string"},
-        "description": {"type": "string"},
+        "terrain": {"type": "string", "maxLength": 60},
+        "description": {"type": "string", "maxLength": 600},
     },
     "required": ["title", "living_things", "terrain", "description"],
 }
@@ -134,22 +135,32 @@ class OllamaBackend:
             )
 
     def observe(self, jpeg: bytes) -> Observation:
+        # num_predict is a backstop: the schema bounds the output, but a runaway
+        # response must still end. 8 items + prose fits well inside 700 tokens.
         body = {
             "model": self.model,
             "stream": False,
             "format": SCHEMA,
-            "options": {"temperature": 0.2},
+            "options": {"temperature": 0.2, "num_predict": 700, "repeat_penalty": 1.1},
             "messages": [
                 {"role": "user", "content": PROMPT, "images": [base64.b64encode(jpeg).decode()]}
             ],
         }
-        try:
-            r = requests.post(f"{self.host}/api/chat", json=body, timeout=self.timeout)
-            r.raise_for_status()
-            content = r.json()["message"]["content"]
-        except (requests.RequestException, KeyError, ValueError) as exc:
-            raise BackendError(f"{exc.__class__.__name__}: {exc}") from exc
-        return parse_observation(content)
+        last: ValueError | None = None
+        for attempt in range(2):
+            if attempt:
+                body["options"]["temperature"] = 0.5  # a different sample, not a repeat of the loop
+            try:
+                r = requests.post(f"{self.host}/api/chat", json=body, timeout=self.timeout)
+                r.raise_for_status()
+                content = r.json()["message"]["content"]
+            except (requests.RequestException, KeyError, ValueError) as exc:
+                raise BackendError(f"{exc.__class__.__name__}: {exc}") from exc
+            try:
+                return parse_observation(content)
+            except ValueError as exc:  # unusable output: retry once, then report it
+                last = exc
+        raise ValueError(f"model output unusable after 2 attempts: {last}")
 
 
 class MockBackend:

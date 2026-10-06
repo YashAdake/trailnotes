@@ -60,7 +60,7 @@ The gemma column used an earlier prompt than the qwen column, so this is a rough
 python -m pytest
 ```
 
-23 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
+26 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
 
 ## Layout
 

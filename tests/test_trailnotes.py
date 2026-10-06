@@ -73,6 +73,57 @@ def test_parse_rejects_unusable_output(bad):
         parse_observation(bad)
 
 
+# ---- Ollama backend (HTTP faked: no GPU needed) ---------------------------
+
+class _Resp:
+    def __init__(self, content):
+        self._c = content
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return {"message": {"content": self._c}}
+
+
+GOOD = '{"title":"Tree","living_things":[{"name":"fig","confidence":"high"}],"terrain":"path","description":"A fig tree."}'
+RUNAWAY = '{"title":"x","living_things":[' + ",".join(['{"name":"bird","confidence":"low"}'] * 400)  # cut off, no closing
+
+
+def _backend_with(monkeypatch, replies):
+    from trailnotes import model
+
+    calls = []
+
+    def fake_post(url, json, timeout):
+        calls.append(json)
+        return _Resp(replies[len(calls) - 1])
+
+    monkeypatch.setattr(model.requests, "post", fake_post)
+    return model.OllamaBackend("m"), calls
+
+
+def test_runaway_output_is_retried_once_then_succeeds(monkeypatch):
+    b, calls = _backend_with(monkeypatch, [RUNAWAY, GOOD])
+    assert b.observe(b"img").title == "Tree"
+    assert len(calls) == 2
+
+
+def test_two_unusable_outputs_become_a_failure_not_garbage(monkeypatch):
+    b, calls = _backend_with(monkeypatch, [RUNAWAY, RUNAWAY])
+    with pytest.raises(ValueError, match="after 2 attempts"):
+        b.observe(b"img")
+    assert len(calls) == 2
+
+
+def test_request_bounds_output_length_and_list_size(monkeypatch):
+    b, calls = _backend_with(monkeypatch, [GOOD])
+    b.observe(b"img")
+    sent = calls[0]
+    assert sent["options"]["num_predict"] <= 1000
+    assert sent["format"]["properties"]["living_things"]["maxItems"] <= 12
+
+
 # ---- pipeline + rendering -------------------------------------------------
 
 class Fake:
