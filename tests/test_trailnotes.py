@@ -182,6 +182,33 @@ def test_model_output_cannot_inject_html_or_close_the_data_script(walk_dir, tmp_
     assert html.count("</script>") == 3
 
 
+def test_photos_months_and_cities_apart_report_no_distance(tmp_path):
+    d = tmp_path / "s"
+    d.mkdir()
+    make_photo(d / "a.jpg", taken="2026:04:14 13:24:00", gps=(16.78, 74.55))  # Kolhapur
+    make_photo(d / "b.jpg", taken="2026:10:06 21:00:00", gps=(18.58, 73.81))  # Pune, 6 months later
+    s = walk_stats([read_meta(p) for p in find_photos(d)])
+    assert s.min_distance_km == 0 and s.linked_pairs == 0
+    html = render_html(build_journal(d, tmp_path / "o", Fake()), "T")
+    assert "straight-line" not in html
+
+
+def test_distance_counts_only_pairs_within_three_hours(tmp_path):
+    d = tmp_path / "s"
+    d.mkdir()
+    make_photo(d / "a.jpg", taken="2026:10:11 07:00:00", gps=(18.52, 73.85))
+    make_photo(d / "b.jpg", taken="2026:10:11 07:30:00", gps=(18.53, 73.85))  # ~1.1 km, linked
+    make_photo(d / "c.jpg", taken="2026:10:11 20:00:00", gps=(19.00, 73.85))  # 12 h later: not linked
+    s = walk_stats([read_meta(p) for p in find_photos(d)])
+    assert s.linked_pairs == 1
+    assert s.min_distance_km == pytest.approx(1.11, abs=0.05)
+
+
+def test_map_points_carry_time_so_route_lines_can_break(walk_dir, tmp_path):
+    html = render_html(build_journal(walk_dir, tmp_path / "o", Fake()), "T")
+    assert '"t": ' in html and "10800" in html
+
+
 def test_file_time_photos_do_not_stretch_the_walk_span(tmp_path):
     d = tmp_path / "s"
     d.mkdir()

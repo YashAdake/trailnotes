@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import timezone
 from html import escape
 from pathlib import Path
 
@@ -37,7 +38,15 @@ if (points.length && window.L) {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     {maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'}).addTo(map);
   const latlngs = points.map(p => [p.lat, p.lon]);
-  L.polyline(latlngs, {color: '#3f6b4a', weight: 3, opacity: 0.7}).addTo(map);
+  // Only join photos taken within 3 hours of each other: anything else is a different outing.
+  let seg = [];
+  const flush = () => { if (seg.length > 1) L.polyline(seg, {color: '#3f6b4a', weight: 3, opacity: 0.7}).addTo(map); seg = []; };
+  points.forEach((p, i) => {
+    const prev = points[i - 1];
+    if (prev && (p.t === null || prev.t === null || p.t - prev.t > 10800)) flush();
+    seg.push([p.lat, p.lon]);
+  });
+  flush();
   points.forEach(p => {
     const el = document.createElement('div');
     const b = document.createElement('b'); b.textContent = p.n + '. ' + p.title;
@@ -84,7 +93,14 @@ def _entry_html(n: int, e: Entry) -> str:
 
 def _points(j: Journal) -> list[dict]:
     return [
-        {"n": n, "lat": e.meta.lat, "lon": e.meta.lon, "title": e.observation.title if e.observation else "Photo"}
+        {
+            "n": n,
+            "lat": e.meta.lat,
+            "lon": e.meta.lon,
+            "title": e.observation.title if e.observation else "Photo",
+            # epoch seconds, only when the camera recorded a time; the map uses it to break the route line
+            "t": int(e.meta.taken.replace(tzinfo=timezone.utc).timestamp()) if e.meta.time_source == "exif" else None,
+        }
         for n, e in enumerate(j.entries, 1)
         if e.meta.lat is not None
     ]
@@ -95,8 +111,8 @@ def render_html(j: Journal, title: str) -> str:
     stats = ""
     if s:
         dist = (
-            f"<li><b>≥ {s.min_distance_km:.2f} km</b>straight-line between geotagged photos</li>"
-            if s.geotagged >= 2
+            f"<li><b>≥ {s.min_distance_km:.2f} km</b>straight-line between photos taken within 3 h of each other</li>"
+            if s.linked_pairs >= 1
             else ""
         )
         mins = s.duration_minutes

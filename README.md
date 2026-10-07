@@ -34,7 +34,7 @@ Options: `--model` (any Ollama vision model), `--host` (Ollama URL), `--title`, 
 ## What it does, and what it does not claim
 
 - **Time and place** come from each photo's EXIF data. If a photo has no camera timestamp, the file time is used and the journal says so. Photos with no GPS simply have no pin. A (0, 0) GPS fix is treated as missing.
-- **Distance** is the straight-line total between consecutive geotagged photos, shown as "≥ x km", a lower bound on what you walked.
+- **Distance** is the straight-line total between consecutive geotagged photos taken within 3 hours of each other, shown as "≥ x km", a lower bound on what you walked. Photos from different days or cities are never joined, in the distance or on the map's route line.
 - **Identifications are the model's guesses.** Each living thing carries the model's own confidence, and "low" is drawn with a dashed outline. Trailnotes does not turn a guess into a fact.
 - **Failures are visible.** If the model returns junk for a photo, that entry appears as failed with the reason, and the footer counts them. A photo that cannot be opened at all is listed as unreadable. If every photo fails, the command exits non-zero. A folder with no photos is an error, not an empty journal.
 - **Model output is treated as untrusted.** Everything is HTML-escaped and the map data cannot break out of its script tag. The tests prove this by deliberately injecting markup.
@@ -64,7 +64,7 @@ The gemma column used an earlier prompt, so this is a rough comparison, not a be
 python -m pytest
 ```
 
-30 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
+33 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
 
 ## Layout
 

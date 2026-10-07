@@ -9,6 +9,8 @@ from datetime import datetime
 from .photos import PhotoMeta
 
 EARTH_RADIUS_KM = 6371.0088
+# Two photos further apart in time than this are not the same outing: no distance or route line joins them.
+MAX_OUTING_GAP_SECONDS = 3 * 3600
 
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -29,9 +31,11 @@ class WalkStats:
     timed: int
     started: datetime | None
     ended: datetime | None
-    # Straight lines between consecutive geotagged photos. A lower bound on the
-    # real distance walked, and the report says so.
+    # Straight lines between consecutive geotagged photos taken within
+    # MAX_OUTING_GAP_SECONDS of each other. A lower bound on the distance
+    # actually covered, and the report says so.
     min_distance_km: float
+    linked_pairs: int
 
     @property
     def duration_minutes(self) -> int | None:
@@ -44,14 +48,23 @@ def walk_stats(metas: list[PhotoMeta]) -> WalkStats | None:
     if not metas:
         return None
     ordered = sorted(metas, key=lambda m: m.taken)
-    pts = [(m.lat, m.lon) for m in ordered if m.lat is not None and m.lon is not None]
-    dist = sum(haversine_km(a[0], a[1], b[0], b[1]) for a, b in zip(pts, pts[1:]))
+    geo = [m for m in ordered if m.lat is not None and m.lon is not None]
+    dist, pairs = 0.0, 0
+    for a, b in zip(geo, geo[1:]):
+        if (
+            a.time_source == "exif"
+            and b.time_source == "exif"
+            and (b.taken - a.taken).total_seconds() <= MAX_OUTING_GAP_SECONDS
+        ):
+            dist += haversine_km(a.lat, a.lon, b.lat, b.lon)
+            pairs += 1
     times = [m.taken for m in ordered if m.time_source == "exif"]
     return WalkStats(
         photos=len(ordered),
-        geotagged=len(pts),
+        geotagged=len(geo),
         timed=len(times),
         started=times[0] if len(times) >= 2 else None,
         ended=times[-1] if len(times) >= 2 else None,
         min_distance_km=dist,
+        linked_pairs=pairs,
     )
