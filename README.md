@@ -66,7 +66,7 @@ The gemma column used an earlier prompt, so this is a rough comparison, not a be
 python -m pytest
 ```
 
-41 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
+43 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
 
 ## Layout
 

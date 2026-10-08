@@ -35,8 +35,8 @@ _MAP_JS = """
 const points = JSON.parse(document.getElementById('points').textContent);
 if (points.length && window.L) {
   const map = L.map('map');
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'}).addTo(map);
+  const tiles = JSON.parse(document.getElementById('tiles').textContent);
+  L.tileLayer(tiles.url, {maxZoom: tiles.maxZoom, attribution: tiles.attribution}).addTo(map);
   const latlngs = points.map(p => [p.lat, p.lon]);
   // Only join photos taken within 3 hours of each other: anything else is a different outing.
   let seg = [];
@@ -108,7 +108,18 @@ def _points(j: Journal) -> list[dict]:
     ]
 
 
-def render_html(j: Journal, title: str) -> str:
+# OpenStreetMap's own tile servers block pages opened from a file (no Referer), and
+# CARTO now needs an API key: both were checked on 2026-10-08 and returned a
+# "blocked" image. OpenTopoMap served real tiles without either.
+DEFAULT_TILES = {
+    "url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    "attribution": "Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap (CC-BY-SA)",
+    "maxZoom": 17,
+}
+
+
+def render_html(j: Journal, title: str, tiles: dict | None = None) -> str:
+    tiles_json = json.dumps(tiles or DEFAULT_TILES).replace("<", "\\u003c")
     s = j.stats
     stats = ""
     if s:
@@ -157,6 +168,7 @@ def render_html(j: Journal, title: str) -> str:
 {stats}<div id="map"></div>{entries}
 <footer>Photos and descriptions never left this machine. Opening this page loads the map library and map tiles from the internet, which reveals the area you are viewing to those servers.{escape(zone)}{escape(note)}{escape(skipped)}</footer></main>
 <script id="points" type="application/json">{points}</script>
+<script id="tiles" type="application/json">{tiles_json}</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>{_MAP_JS}</script></body></html>"""
 
 
@@ -198,9 +210,9 @@ def render_json(j: Journal) -> str:
     )
 
 
-def write_all(j: Journal, out: Path, title: str) -> Path:
+def write_all(j: Journal, out: Path, title: str, tiles: dict | None = None) -> Path:
     out.mkdir(parents=True, exist_ok=True)
-    (out / "index.html").write_text(render_html(j, title), encoding="utf-8")
+    (out / "index.html").write_text(render_html(j, title, tiles), encoding="utf-8")
     (out / "journal.md").write_text(render_markdown(j, title), encoding="utf-8")
     (out / "journal.json").write_text(render_json(j), encoding="utf-8")
     return out / "index.html"

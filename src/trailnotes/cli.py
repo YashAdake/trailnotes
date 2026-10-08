@@ -30,6 +30,12 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--mock", action="store_true", help="no model: test the pipeline without a GPU")
     p.add_argument("--check", action="store_true", help="only list each photo's time and GPS; no model, no journal")
     p.add_argument(
+        "--tiles",
+        metavar="URL",
+        help="map tile URL template with {z}/{x}/{y} (default: OpenTopoMap)",
+    )
+    p.add_argument("--tiles-attribution", default="Map data &copy; OpenStreetMap contributors", metavar="TEXT")
+    p.add_argument(
         "--privacy-zone",
         type=_zone,
         metavar="LAT,LON,METRES",
@@ -88,7 +94,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 3
 
-    page = write_all(journal, args.out, args.title)
+    tiles = None
+    if args.tiles:
+        tiles = {"url": args.tiles, "attribution": args.tiles_attribution, "maxZoom": 19}
+    page = write_all(journal, args.out, args.title, tiles)
     failed = sum(1 for e in journal.entries if e.observation is None)
     print(f"\n{len(journal.entries) - failed} described, {failed} failed, {len(journal.unreadable)} unreadable")
     hidden = sum(1 for e in journal.entries if e.meta.location_hidden)

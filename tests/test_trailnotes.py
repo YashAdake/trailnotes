@@ -178,8 +178,8 @@ def test_model_output_cannot_inject_html_or_close_the_data_script(walk_dir, tmp_
     html = render_html(j, "<b>title</b>")
     for needle in ("<img src=x", "<svg onload", "<script>alert", "<b>title"):
         assert needle not in html
-    # the only </script> tags are the three we wrote ourselves
-    assert html.count("</script>") == 3
+    # the only </script> tags are the four we wrote ourselves (points, tiles, leaflet, map code)
+    assert html.count("</script>") == 4
 
 
 def test_photos_months_and_cities_apart_report_no_distance(tmp_path):
@@ -350,6 +350,21 @@ def test_bad_privacy_zone_is_rejected(walk_dir, bad):
     with pytest.raises(SystemExit) as exc:
         main([str(walk_dir), "--mock", "--privacy-zone", bad])
     assert exc.value.code == 2
+
+
+def test_map_does_not_use_the_blocked_osm_tile_server(walk_dir, tmp_path):
+    # tile.openstreetmap.org returns an "Access blocked" image to pages opened from a file
+    html = render_html(build_journal(walk_dir, tmp_path / "o", Fake()), "T")
+    assert "tile.openstreetmap.org" not in html
+    assert "opentopomap.org" in html and "OpenStreetMap contributors" in html
+
+
+def test_custom_tiles_flag_reaches_the_page(walk_dir, tmp_path):
+    out = tmp_path / "j"
+    url = "https://example.test/{z}/{x}/{y}.png"
+    assert main([str(walk_dir), "-o", str(out), "--mock", "--tiles", url]) == 0
+    html = (out / "index.html").read_text(encoding="utf-8")
+    assert url in html and "opentopomap" not in html
 
 
 def test_cli_exit_codes(tmp_path):
