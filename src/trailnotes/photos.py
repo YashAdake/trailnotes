@@ -25,6 +25,8 @@ class PhotoMeta:
     time_source: str  # "exif" or "file-modified": the difference is shown to the reader
     lat: float | None
     lon: float | None
+    # True when the photo had GPS but it fell inside the user's privacy zone and was removed.
+    location_hidden: bool = False
 
 
 def find_photos(folder: Path) -> list[Path]:

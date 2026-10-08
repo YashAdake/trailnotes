@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
 
-from .geo import WalkStats, walk_stats
+from .geo import WalkStats, haversine_km, walk_stats
 from .model import Backend, BackendError, Observation
 from .photos import PhotoMeta, find_photos, read_meta, resized_jpeg
 
@@ -34,11 +34,27 @@ class NoPhotosFound(RuntimeError):
     pass
 
 
+# (latitude, longitude, radius in metres)
+PrivacyZone = tuple[float, float, float]
+
+
+def apply_privacy_zone(meta: PhotoMeta, zone: PrivacyZone | None) -> PhotoMeta:
+    """Drop the location of a photo taken inside the zone. The photo and its
+    description stay; only where it was taken is removed from the journal."""
+    if zone is None or meta.lat is None or meta.lon is None:
+        return meta
+    lat, lon, radius_m = zone
+    if haversine_km(meta.lat, meta.lon, lat, lon) * 1000 <= radius_m:
+        return replace(meta, lat=None, lon=None, location_hidden=True)
+    return meta
+
+
 def build_journal(
     source: Path,
     out: Path,
     backend: Backend,
     progress: Callable[[int, int, Path], None] | None = None,
+    privacy_zone: PrivacyZone | None = None,
 ) -> Journal:
     photos = find_photos(source)
     if not photos:
@@ -50,7 +66,7 @@ def build_journal(
     unreadable: list[tuple[str, str]] = []
     for p in photos:
         try:
-            metas.append(read_meta(p))
+            metas.append(apply_privacy_zone(read_meta(p), privacy_zone))
         except Exception as exc:  # corrupt or unsupported file: report it, keep going
             unreadable.append((p.name, f"{exc.__class__.__name__}: {exc}"))
     metas.sort(key=lambda m: m.taken)

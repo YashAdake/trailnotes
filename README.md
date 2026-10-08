@@ -25,6 +25,8 @@ Then open `journal\index.html`. The folder also contains `journal.md` and `journ
 
 Check your photos first, with no model: `trailnotes C:\path\to\photos --check` lists each photo's camera time and GPS, so you can see which ones will get a map pin before spending minutes on the model. Formats: JPEG, PNG and WebP. iPhone HEIC files are not read: the tool warns and ignores them, so switch the camera to "Most Compatible" or export as JPEG. Photos sent through WhatsApp usually lose their GPS and time, so copy the originals over USB, Drive or Nearby Share instead.
 
+**Privacy zone.** A walk that starts at your door puts your door on the map. `--privacy-zone LAT,LON,METRES` (for example `--privacy-zone 18.5204,73.8567,400`) removes the location of every photo taken within that radius: no pin, no coordinates in the page or the JSON, not counted in the distance. The photo and its description stay. The first pin outside the zone still shows roughly which way you went, so pick a radius you are comfortable with. The journal's thumbnails are re-encoded without EXIF, so they carry no GPS either. The zone is a command-line argument and is never written into the repo.
+
 Try the pipeline with no model at all: `trailnotes C:\path\to\photos --mock`. The mock journal is labelled as mock.
 
 No photos of your own yet? `python scripts/fetch_sample.py` downloads a few free-licensed, geotagged photos from Wikimedia Commons into `samples/` (git-ignored) with a `CREDITS.md` of authors and licences. These are for testing and demos only: they are not one walk, the GPS is written in from Commons coordinates rather than a camera, and the journal says "not one walk" when the photos span more than a day. Do not present a sample journal as a walk you took.
@@ -64,7 +66,7 @@ The gemma column used an earlier prompt, so this is a rough comparison, not a be
 python -m pytest
 ```
 
-33 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
+41 tests, including an end-to-end run through the real CLI and checks that were confirmed to fail when the escaping was removed. The Ollama backend itself can only be checked against a real model, so that is a manual step: see `docs/OMEN-RUNBOOK.md`.
 
 ## Layout
 

@@ -67,6 +67,8 @@ def _when(entry: Entry) -> str:
 
 def _where(entry: Entry) -> str:
     m = entry.meta
+    if m.location_hidden:
+        return "location hidden (inside privacy zone)"
     return f"{m.lat:.5f}, {m.lon:.5f}" if m.lat is not None else "no GPS in this photo"
 
 
@@ -141,13 +143,19 @@ def render_html(j: Journal, title: str) -> str:
         if j.unreadable
         else ""
     )
+    hidden = sum(1 for e in j.entries if e.meta.location_hidden)
+    zone = (
+        f" {hidden} photo(s) taken inside the privacy zone have their location removed: no pin, no coordinates, not counted in the distance."
+        if hidden
+        else ""
+    )
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)}</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>{_CSS}</style></head>
 <body><main><h1>{escape(title)}</h1>
 <p class="sub">A field journal written by a model running on this computer ({escape(j.backend)}). Identifications are guesses by a small model, and its confidence is its own opinion, not a measurement: treat even "high" as unverified. Dashed and dotted chips are the ones it was less sure about.</p>
 {stats}<div id="map"></div>{entries}
-<footer>Photos and descriptions never left this machine. Opening this page loads the map library and map tiles from the internet, which reveals the area you are viewing to those servers.{escape(note)}{escape(skipped)}</footer></main>
+<footer>Photos and descriptions never left this machine. Opening this page loads the map library and map tiles from the internet, which reveals the area you are viewing to those servers.{escape(zone)}{escape(note)}{escape(skipped)}</footer></main>
 <script id="points" type="application/json">{points}</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>{_MAP_JS}</script></body></html>"""
 
@@ -179,6 +187,7 @@ def render_json(j: Journal) -> str:
                     "time_source": e.meta.time_source,
                     "lat": e.meta.lat,
                     "lon": e.meta.lon,
+                    "location_hidden": e.meta.location_hidden,
                     "observation": vars(e.observation) if e.observation else None,
                     "error": e.error,
                 }

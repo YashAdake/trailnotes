@@ -295,6 +295,63 @@ def test_mixed_gps_journal_renders_pins_only_for_geotagged(walk_dir, tmp_path):
     assert html.count('"lat": 18.5') == 2
 
 
+HOME = (18.58104, 73.81828)
+
+
+def _zone_walk(tmp_path):
+    d = tmp_path / "zw"
+    d.mkdir()
+    make_photo(d / "a.jpg", taken="2026:10:08 18:06:00", gps=(18.58126, 73.81979))  # ~160 m from HOME
+    make_photo(d / "b.jpg", taken="2026:10:08 18:15:00", gps=(18.58296, 73.82484))  # ~720 m away
+    make_photo(d / "c.jpg", taken="2026:10:08 18:20:00", gps=(18.58271, 73.82355))  # ~590 m away
+    return d
+
+
+def test_privacy_zone_removes_location_everywhere_it_could_leak(tmp_path):
+    d = _zone_walk(tmp_path)
+    out = tmp_path / "j"
+    assert main([str(d), "-o", str(out), "--mock", "--privacy-zone", f"{HOME[0]},{HOME[1]},400"]) == 0
+    html = (out / "index.html").read_text(encoding="utf-8")
+    data = json.loads((out / "journal.json").read_text(encoding="utf-8"))
+    # the hidden photo's coordinates appear nowhere: not in text, not in map data, not in JSON
+    for needle in ("18.58126", "73.81979", "18.5812", "73.8197"):
+        assert needle not in html
+        assert needle not in json.dumps(data)
+    assert "location hidden (inside privacy zone)" in html
+    assert [e["location_hidden"] for e in data["entries"]] == [True, False, False]
+    # the photos outside the zone still get pins
+    assert html.count('"lat": 18.58') == 2
+
+
+def test_privacy_zone_does_not_hide_photos_outside_it(tmp_path):
+    d = _zone_walk(tmp_path)
+    j = build_journal(d, tmp_path / "o", Fake(), privacy_zone=(HOME[0], HOME[1], 50))
+    assert not any(e.meta.location_hidden for e in j.entries)
+
+
+def test_hidden_photo_is_not_counted_in_distance(tmp_path):
+    d = _zone_walk(tmp_path)
+    j = build_journal(d, tmp_path / "o", Fake(), privacy_zone=(HOME[0], HOME[1], 400))
+    assert j.stats.geotagged == 2 and j.stats.linked_pairs == 1
+
+
+def test_thumbnails_carry_no_gps(walk_dir, tmp_path):
+    from PIL import Image
+
+    out = tmp_path / "j"
+    build_journal(walk_dir, out, Fake())
+    for thumb in (out / "thumbs").glob("*.jpg"):
+        with Image.open(thumb) as im:
+            assert not im.getexif().get_ifd(0x8825), f"{thumb.name} still has GPS"
+
+
+@pytest.mark.parametrize("bad", ["18.5,73.8", "a,b,c", "95,73.8,100", "18.5,73.8,0"])
+def test_bad_privacy_zone_is_rejected(walk_dir, bad):
+    with pytest.raises(SystemExit) as exc:
+        main([str(walk_dir), "--mock", "--privacy-zone", bad])
+    assert exc.value.code == 2
+
+
 def test_cli_exit_codes(tmp_path):
     assert main([str(tmp_path / "nope"), "--mock"]) == 2
     assert main([str(tmp_path), "-o", str(tmp_path / "o"), "--mock"]) == 2  # no photos

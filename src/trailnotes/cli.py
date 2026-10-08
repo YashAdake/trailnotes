@@ -10,6 +10,16 @@ from .pipeline import NoPhotosFound, build_journal
 from .render import write_all
 
 
+def _zone(text: str) -> tuple[float, float, float]:
+    try:
+        lat, lon, radius = (float(x) for x in text.split(","))
+    except ValueError:
+        raise argparse.ArgumentTypeError("use LAT,LON,METRES, e.g. 18.5204,73.8567,400") from None
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180) or not 0 < radius <= 50_000:
+        raise argparse.ArgumentTypeError("latitude, longitude or radius out of range")
+    return lat, lon, radius
+
+
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="trailnotes", description=__doc__)
     p.add_argument("photos", type=Path, help="folder of walk photos (searched recursively)")
@@ -19,6 +29,12 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--host", default="http://localhost:11434", help="Ollama URL")
     p.add_argument("--mock", action="store_true", help="no model: test the pipeline without a GPU")
     p.add_argument("--check", action="store_true", help="only list each photo's time and GPS; no model, no journal")
+    p.add_argument(
+        "--privacy-zone",
+        type=_zone,
+        metavar="LAT,LON,METRES",
+        help="remove the location of photos taken within this radius (e.g. around home)",
+    )
     return p
 
 
@@ -64,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[{i}/{total}] {path.name}", flush=True)
 
     try:
-        journal = build_journal(args.photos, args.out, backend, progress)
+        journal = build_journal(args.photos, args.out, backend, progress, args.privacy_zone)
     except NoPhotosFound as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -75,6 +91,9 @@ def main(argv: list[str] | None = None) -> int:
     page = write_all(journal, args.out, args.title)
     failed = sum(1 for e in journal.entries if e.observation is None)
     print(f"\n{len(journal.entries) - failed} described, {failed} failed, {len(journal.unreadable)} unreadable")
+    hidden = sum(1 for e in journal.entries if e.meta.location_hidden)
+    if args.privacy_zone is not None:
+        print(f"{hidden} photo(s) inside the privacy zone: location removed")
     print(f"Open: {page.resolve()}")
     # Every photo failing means the journal says nothing: do not report success.
     return 1 if journal.entries and failed == len(journal.entries) else 0
